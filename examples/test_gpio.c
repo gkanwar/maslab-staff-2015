@@ -1,3 +1,6 @@
+// Build with:
+// gcc test_gpio.c -o test_gpio -lmraa
+
 #include <stdio.h>
 #include <unistd.h>
 

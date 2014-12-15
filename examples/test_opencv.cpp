@@ -1,3 +1,7 @@
+// Build with:
+// g++ test_opencv.cpp -o test_opencv `pkg-config opencv --cflags --libs` -lpthread
+// Make sure to edit /usr/lib/pkgconfig/opencv.pc and remove -lopencv_ts first.
+
 #include <cassert>
 #include <iostream>
 #include <time.h>

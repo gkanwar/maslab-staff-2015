@@ -1,3 +1,6 @@
+// Build with:
+// g++ test_spi.cpp -o test_spi -lmraa
+
 #include <unistd.h>
 #include <stdint.h>
 #include <signal.h>
