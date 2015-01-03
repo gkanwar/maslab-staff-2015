@@ -8,19 +8,21 @@
 
 #include "mraa.hpp"
 
-int running = 0;
+int running = 1;
 
 void sig_handler(int signo)
 {
   if (signo == SIGINT) {
     printf("closing spi nicely\n");
-    running = -1;
+    running = 0;
   }
 }
 
 int main()
 {
+  // Handle Ctrl-C quit
   signal(SIGINT, sig_handler);
+
   mraa::Spi* spi = new mraa::Spi(0);
   spi->bitPerWord(32);
   char rxBuf[2];
@@ -33,7 +35,7 @@ int main()
   float total = 0;
   struct timeval tv;
   int init = 0;
-  while (running == 0) {
+  while (running) {
     char* recv = spi->write(writeBuf, 4);
     if (recv) {
       unsigned int recvVal = 0 | recv[3];
