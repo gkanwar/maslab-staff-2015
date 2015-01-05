@@ -1,9 +1,9 @@
-// Build with:
-// g++ test_gpio.cpp -o test_gpio -lmraa
+// Compile with:
+// g++ test_aio.cpp -o test_aio -lmraa
+// Repeatedly reads pin A0 and prints the result.
 
 #include <csignal>
 #include <iostream>
-#include <unistd.h>
 
 #include "mraa.hpp"
 
@@ -21,16 +21,11 @@ int main() {
   // Handle Ctrl-C quit
   signal(SIGINT, sig_handler);
 
-  // LED is connected to pin 13
-  mraa::Gpio gpio = mraa::Gpio(13);
-  gpio.dir(mraa::DIR_OUT);
+  mraa::Aio aio = mraa::Aio(0);
 
   while (running) {
-    printf("Gpio high\n");
-    gpio.write(1);
-    sleep(1);
-    printf("Gpio low\n");
-    gpio.write(0);
+    int val = aio.read();
+    std::cout << "Read: " << val << std::endl;
     sleep(1);
   }
 }
