@@ -1,5 +1,10 @@
 // Build with:
 // g++ test_spi.cpp -o test_spi -lmraa
+// SPI pins are:
+// - IO10: SS
+// - IO11: MOSI
+// - IO12: MISO
+// - IO13: SCLK
 
 #include <unistd.h>
 #include <stdint.h>
