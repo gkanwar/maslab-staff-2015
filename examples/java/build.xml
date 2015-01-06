@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="Example" basedir="." default="jar">
+
+  <property name="src.dir" value="src"/>
+  <property name="classes.dir" value="classes"/>
+  <property name="jar.file" value="${ant.project.name}.jar"/>
+
+  <target name="clean" description="Delete generated files">
+    <delete dir="${classes.dir}"/>
+    <delete file="${jar.file}"/>
+  </target>
+
+  <target name="compile" description="Compiles the Java src">
+    <mkdir dir="${classes.dir}"/>
+    <javac srcdir="${src.dir}" destdir="${classes.dir}"/>
+  </target>
+
+  <target name="jar" description="JARs the compiled classes" depends="compile">
+    <jar destfile="${jar.file}" basedir="${classes.dir}"/>
+  </target>
+
+  <target name="hello" description="Runs Hello task" depends="jar">
+    <taskdef name="helloworld" classname="hello.HelloWorld"
+	     classpath="${jar.file}"/>
+    <helloworld/>
+  </target>
+
+</project>
