@@ -5,4 +5,4 @@ or write yours from scratch.
 Commands:
 -- ant jar: Compile and jar the Java files (subset of 'hello' command).
 -- ant hello: Compile the Java files, then run the HelloWorld task.
--- ant claen: Deletes compiled files.
+-- ant clean: Deletes compiled files.

@@ -1,0 +1,15 @@
+This is an example of an Java project with Java Native Interface (JNI),
+with an associated Ant build config. You can add targets and expand on
+this to build your real Java project, if you're using JNI. Or write yours
+from scratch.
+
+Directories:
+-- src: Java source files
+-- jni: C++ source files
+-- include: Relevant java headers are automatically built here
+-- classes: Auto-generated directory with built java classes
+
+Commands:
+-- ant jar: Compile and jar the src files (subset of 'hello' command).
+-- ant hello: Compile the src files, then run the HelloWorld task.
+-- ant clean: Deletes compiled files.
