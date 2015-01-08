@@ -13,6 +13,11 @@
 
 #include "mraa.hpp"
 
+#define MS 1000
+
+#define GYRO_DATA_OKAY_MASK 0x0C000000
+#define GYRO_DATA_OKAY 0x04000000
+
 int running = 1;
 
 void sig_handler(int signo)
@@ -27,7 +32,9 @@ int main()
 {
   // Handle Ctrl-C quit
   signal(SIGINT, sig_handler);
-
+  mraa::Gpio *chipSelect = new mraa::Gpio(10);
+  chipSelect->dir(mraa::DIR_OUT);
+  chipSelect->write(1);
   mraa::Spi* spi = new mraa::Spi(0);
   spi->bitPerWord(32);
   char rxBuf[2];
@@ -41,13 +48,16 @@ int main()
   struct timeval tv;
   int init = 0;
   while (running) {
+    chipSelect->write(0);
     char* recv = spi->write(writeBuf, 4);
-    if (recv) {
-      unsigned int recvVal = 0 | recv[3];
-      recvVal = (recvVal << 8) | recv[2];
-      recvVal = (recvVal << 8) | recv[1];
-      recvVal = (recvVal << 8) | recv[0];
-      //printf("Received: 0x%.8x\n", recvVal);
+    chipSelect->write(1);
+//    printf("%x %x %x %x\r\n", recv[0], recv[1], recv[2], recv[3]);
+    if (recv != NULL) {
+      unsigned int recvVal = ((uint8_t) recv[3] & 0xFF);
+      recvVal = (recvVal << 8) | ((uint8_t)recv[2] & 0xFF);
+      recvVal = (recvVal << 8) | ((uint8_t)recv[1] & 0xFF);
+      recvVal = (recvVal << 8) | ((uint8_t)recv[0] & 0xFF);
+      printf("Received: 0x%.8x, ", recvVal);
       // Sensor reading
       short reading = (recvVal >> 10) & 0xffff;
       if (init) {
@@ -60,7 +70,7 @@ int main()
 	float msf = (float)msi;
 	float rf = (float)reading;
         total += -0.001 * msf * (rf / 80.0);
-        printf("Reading: %f, Total: %f, Time: %f\n", rf, total, -msf);
+        printf("Total: %f, Reading: %f, Time: %f\n", total, rf, -msf);
       }
       else {
 	init = 1;
@@ -70,7 +80,7 @@ int main()
     else {
       printf("No recv\n");
     }
-    usleep(5000);
+    usleep(10 * MS);
   }
 
   delete spi;
