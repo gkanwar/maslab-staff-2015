@@ -2,7 +2,7 @@
 CPPFLAGS = -Wall -g
 
 # Include directories
-INCLUDES = -I../include -I$(JAVA_HOME)/include
+INCLUDES = -I../include -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 
 # Which source files to compile
 SRCS = hello.cpp
