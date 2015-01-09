@@ -1,14 +1,11 @@
 // Compile with:
-// g++ -std=c++0x test_servo_shield.cpp -o test_servo_shield -lmraa
-// (C++0x needed for vector initialization, feel free to init a different
-// way to avoid needing it)
-// Controls a servo on port 12 of the servo shield.
+// g++ test_servo_shield.cpp -o test_servo_shield -lmraa
+// Controls a servo on port 0 of the servo shield.
 
 #include "mraa.hpp"
 #include <cassert>
 #include <csignal>
 #include <iostream>
-#include <vector>
 
 #define SHIELD_I2C_ADDR 0x40
 
@@ -73,7 +70,6 @@ void writePWM(mraa::I2c* i2c, int index, double duty) {
   assert(0 <= index && index < 16);
   double on = 4095.0 * duty;
   uint16_t onRounded = (uint16_t) on;
-  uint16_t offRounded = 4095 - onRounded;
 
   char writeBuf[5];
 
@@ -98,7 +94,7 @@ int main()
   signal(SIGINT, sig_handler);
 
   // Edison i2c bus is 6
-  mraa::I2c* i2c = new mraa::I2c(1);
+  mraa::I2c* i2c = new mraa::I2c(6);
   assert(i2c != NULL);
 
   initPWM(i2c);
@@ -106,10 +102,8 @@ int main()
   while (running) {
     // Alternate two locations with 2-sec delay
     setServoPosition(i2c, 0, 0.2);
-    setServoPosition(i2c, 1, 0.2);
     sleep(2.0);
     setServoPosition(i2c, 0, 0.8);
-    setServoPosition(i2c, 1, 0.8);
     sleep(2.0);
   }
 }
