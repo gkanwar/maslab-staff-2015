@@ -1,5 +1,17 @@
+// Compile with:
+// g++ test_encoder.cpp -o test_encoder -lmraa
+//
+// Counts encoder ticks for a quadrature encoder. This is a *rough*
+// implementation, in that it does not do any sort of locking or thread
+// consistency on the assumption that encoder ticks will be coming in slowly
+// enough to be serial. This is most likely a good assumption, but keep
+// an eye out for those "weird phase transition" prints.
+//
+// Runs with channel A (yellow) on pin 5 and channel B (white) on pin 7.
+
 #include <cassert>
 #include <csignal>
+#include <iostream>
 
 #include "mraa.hpp"
 
@@ -14,13 +26,29 @@ void sig_handler(int signo)
   }
 }
 
-static int aState;
-static int bState;
-static int count = 0;
+// Variables are volatile to ensure memory consistency between different
+// edge callbacks.
+volatile int aState;
+volatile int bState;
+volatile int count = 0;
 
-int getPhase() {
-  // Return a phase from 0 - 3
-  aState * 2 + bState;
+int getPhase(int a, int b) {
+  assert(a == 0 || a == 1);
+  assert(b == 0 || b == 1);
+  if (a == 0 && b == 0) {
+    return 0;
+  }
+  else if (a == 1 && b == 0) {
+    return 1;
+  }
+  else if (a == 1 && b == 1) {
+    return 2;
+  }
+  else if (a == 0 && b == 1) {
+    return 3;
+  }
+  // Unreachable
+  assert(false);
 }
 
 void updateTick(int prevPhase, int curPhase) {
@@ -41,20 +69,26 @@ void updateTick(int prevPhase, int curPhase) {
 }
 
 void aHandler(void* args) {
-  int prevPhase = getPhase();
   // Get the gpio handle from the args
   mraa::Gpio *encA = (mraa::Gpio*)args;
-  aState = encA->read();
-  int curPhase = getPhase();
+  int a = aState;
+  int b = bState;
+  int newA = encA->read();
+  aState = newA;
+  int prevPhase = getPhase(a, b);
+  int curPhase = getPhase(newA, b);
   updateTick(prevPhase, curPhase);
 }
 
 void bHandler(void* args) {
-  int prevPhase = getPhase();
   // Get the gpio handle from the args
   mraa::Gpio *encB = (mraa::Gpio*)args;
-  bState = encB->read();
-  int curPhase = getPhase();
+  int a = aState;
+  int b = bState;
+  int newB = encB->read();
+  bState = newB;
+  int prevPhase = getPhase(a, b);
+  int curPhase = getPhase(a, newB);
   updateTick(prevPhase, curPhase);
 }
 
@@ -62,12 +96,12 @@ int main() {
   // Handle Ctrl-C quit
   signal(SIGINT, sig_handler);
 
-  mraa::Gpio *encA = new mraa::Gpio(2);
-  assert(encA != nullptr);
+  mraa::Gpio *encA = new mraa::Gpio(7);
+  assert(encA != NULL);
   encA->dir(mraa::DIR_IN);
   encA->isr(mraa::EDGE_BOTH, aHandler, encA);
-  mraa::Gpio *encB = new mraa::Gpio(3);
-  assert(encB != nullptr);
+  mraa::Gpio *encB = new mraa::Gpio(5);
+  assert(encB != NULL);
   encB->dir(mraa::DIR_IN);
   encB->isr(mraa::EDGE_BOTH, bHandler, encB);
 
