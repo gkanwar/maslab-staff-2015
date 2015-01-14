@@ -19,10 +19,6 @@ void sig_handler(int signo)
 }
 
 void echo_handler(void* args) {
-  // Grab end time first, for accuracy
-  struct timeval end;
-  gettimeofday(&end, NULL);
-
   mraa::Gpio* echo = (mraa::Gpio*)args;
   static struct timeval start;
   bool rising = echo->read() == 1;
@@ -30,6 +26,9 @@ void echo_handler(void* args) {
     gettimeofday(&start, NULL);
   }
   else {
+    struct timeval end;
+    gettimeofday(&end, NULL);
+
     int diffSec = end.tv_sec - start.tv_sec;
     std::cout << "Diff sec: " << diffSec << std::endl;
     int diffUSec = end.tv_usec - start.tv_usec;
