@@ -99,11 +99,11 @@ public class BotClientMap {
 
   public static class Wall {
     enum WallTypeShort {
-      W, O, P
+      W, P
     };
 
     enum WallType {
-      WALL, OPPONENT, PLATFORM
+      WALL, PLATFORM
     };
 
     public final WallType type;
@@ -260,14 +260,19 @@ public class BotClientMap {
           @Override
           public void mouseClicked(MouseEvent e) {
             super.mouseClicked(e);
-            System.out.println(e.getPoint());
             Point p = toPoint(e.getPoint());
             if (start == null) {
               start = p;
             } else {
-              Wall w = new Wall(start, p, WallType.WALL);
-              walls.add(w);
-              start = null;
+              int dx = start.x - p.x;
+              int dy = start.y - p.y;
+              if (dx * dx + dy * dy <= 2) {
+                Wall w = new Wall(start, p, WallType.WALL);
+                walls.add(w);
+                start = null;
+              } else {
+                System.err.println("Error: Invalid wall length!");
+              }
             }
 
             repaint();
@@ -278,88 +283,110 @@ public class BotClientMap {
           @Override
           public void keyPressed(KeyEvent e) {
             super.keyPressed(e);
-
-            WallType t = null;
-            Stack s = null;
-            switch (e.getKeyChar()) {
-              case 'w':
-                t = WallType.WALL;
-                break;
-              case 'o':
-                t = WallType.OPPONENT;
-                break;
-              case 'l':
-                t = WallType.PLATFORM;
-                break;
-              case 'h':
+            
+            try {
+  
+              WallType t = null;
+              Stack s = null;
+              switch (e.getKeyChar()) {
+                case 'w':
+                  t = WallType.WALL;
+                  break;
+                case 'l':
+                  t = WallType.PLATFORM;
+                  break;
+                case 'h':
+                  if (walls.size() > 0) {
+                    Wall b = walls.remove(walls.size() - 1);
+                    base.bounds.add(b);
+                  } else {
+                    throw new Exception("Need an existing wall before converting it to a homebase line.");
+                  }
+                  break;
+                case 'd':
+                  if (walls.size() > 0)
+                    walls.remove(walls.size() - 1);
+                  else {
+                    throw new Exception("No more walls to undo.");
+                  }
+                  break;
+                case 'x':
+                  if (stacks.size() > 0)
+                    stacks.remove(stacks.size() - 1);
+                  else {
+                    throw new Exception("No more stacks to undo.");
+                  }
+                  break;
+                case 'c':
+                  if (base.bounds.size() > 0) {
+                    base.bounds.clear();
+                  } else {
+                    throw new Exception("Homebase polygon already empty.");
+                  }
+                  break;
+                case 'p':
+                  System.out.println("--------------- THE MAP ------------------");
+                  System.out.println("-------- DO NOT USE THESE DASHES ---------\n");
+                  System.out.println(toBotClientString());
+                  System.out.println("-------- DO NOT USE THESE DASHES ---------");
+                  break;
+                case 's':
+                  if (start != null) {
+                    s = new Stack(start, Stack.BlockType.GREEN,
+                                  Stack.BlockType.GREEN, Stack.BlockType.GREEN);
+                    stacks.add(s);
+                    start = null;
+                  } else {
+                    throw new Exception("Can't create a stack without a point.");
+                  }
+                  break;
+                case '1':
+                  if (stacks.size() > 0) {
+                    Stack last = stacks.get(stacks.size() - 1);
+                    if (last.c1 == Stack.BlockType.RED)
+                      last.c1 = Stack.BlockType.GREEN;
+                    else
+                      last.c1 = Stack.BlockType.RED;
+                  }
+                  break;
+                case '2':
+                  if (stacks.size() > 0) {
+                    Stack last = stacks.get(stacks.size() - 1);
+                    if (last.c2 == Stack.BlockType.RED)
+                      last.c2 = Stack.BlockType.GREEN;
+                    else
+                      last.c2 = Stack.BlockType.RED;
+                  }
+                  break;
+                case '3':
+                  if (stacks.size() > 0) {
+                    Stack last = stacks.get(stacks.size() - 1);
+                    if (last.c3 == Stack.BlockType.RED)
+                      last.c3 = Stack.BlockType.GREEN;
+                    else
+                      last.c3 = Stack.BlockType.RED;
+                  }
+                  break;
+                case 'i':
+                  if (start != null) {
+                    startPose = new Pose(start.x, start.y);
+                    start = null;
+                  } else {
+                    throw new Exception("Can't set initial position without a point.");
+                  }
+                  break;
+              }
+  
+              if (t != null) {
                 if (walls.size() > 0) {
-                  Wall b = walls.remove(walls.size() - 1);
-                  base.bounds.add(b);
+                  Wall w = walls.remove(walls.size() - 1);
+                  walls.add(new Wall(w.start, w.end, t));
+                } else {
+                  throw new Exception("Can't set wall type [" + t.name() + "] without an existing wall!");
                 }
-                // case 's':
-                // 	t = WallType.SILO;
-                // 	break;
-                // case 'r':
-                // 	t = WallType.REACTOR;
-                // 	break;
-              case 'd':
-                if (walls.size() > 0)
-                  walls.remove(walls.size() - 1);
-                break;
-              case 'x':
-                if (stacks.size() > 0)
-                  stacks.remove(stacks.size() - 1);
-                break;
-              case 'C':
-                walls.clear();
-                break;
-              case 'p':
-                System.out.println(toBotClientString());
-                break;
-              case 's':
-                // Wall w = walls.remove(walls.size() - 1);
-                s = new Stack(start, Stack.BlockType.GREEN,
-                              Stack.BlockType.GREEN, Stack.BlockType.GREEN);
-                stacks.add(s);
-                start = null;
-                break;
-              case '1':
-                if (stacks.size() > 0) {
-                  Stack last = stacks.get(stacks.size() - 1);
-                  if (last.c1 == Stack.BlockType.RED)
-                    last.c1 = Stack.BlockType.GREEN;
-                  else
-                    last.c1 = Stack.BlockType.RED;
-                }
-                break;
-              case '2':
-                if (stacks.size() > 0) {
-                  Stack last = stacks.get(stacks.size() - 1);
-                  if (last.c2 == Stack.BlockType.RED)
-                    last.c2 = Stack.BlockType.GREEN;
-                  else
-                    last.c2 = Stack.BlockType.RED;
-                }
-                break;
-              case '3':
-                if (stacks.size() > 0) {
-                  Stack last = stacks.get(stacks.size() - 1);
-                  if (last.c3 == Stack.BlockType.RED)
-                    last.c3 = Stack.BlockType.GREEN;
-                  else
-                    last.c3 = Stack.BlockType.RED;
-                }
-                break;
-              case 'i':
-                Wall w1 = walls.remove(walls.size() - 1);
-                // int theta = Math.atan2(w.end.y - w.start.y, w.end.x - w.start.x);
-                startPose = new Pose(w1.start.x, w1.start.y);
-
-            }
-
-            if (t != null) {
-              Wall w = walls.remove(walls.size() - 1);
-              walls.add(new Wall(w.start, w.end, t));
+              }
+            } catch (Exception exc) {
+              System.err.println("Error: " + exc.getMessage());
             }
 
             repaint();
@@ -379,6 +406,13 @@ public class BotClientMap {
         }
       }
 
+      Color[] wallColors = new Color[] { Color.blue, new Color(240,230,0) };
+      for (Wall w : walls) {
+        g.setColor(wallColors[w.type.ordinal()]);
+        g.drawLine(toPixelX(w.start.x), toPixelY(w.start.y),
+                   toPixelX(w.end.x), toPixelY(w.end.y));
+      }
+      
       if (start != null) {
         g.setColor(Color.magenta);
         g.fillOval(toPixelX(start.x) - 3, toPixelY(start.y) - 3, 7, 7);
@@ -390,32 +424,35 @@ public class BotClientMap {
                    toPixelX(b.end.x), toPixelY(b.end.y));
       }
 
-      Color[] wallColors = new Color[] { Color.black, Color.yellow };
-      for (Wall w : walls) {
-        g.setColor(wallColors[w.type.ordinal()]);
-        g.drawLine(toPixelX(w.start.x), toPixelY(w.start.y),
-                   toPixelX(w.end.x), toPixelY(w.end.y));
-      }
-
-      Color[] stackColors = new Color[] { Color.red, Color.green };
+      Color[] stackColors = new Color[] { Color.red, new Color(0,180,0) };
       for (Stack s : stacks) {
-        g.setColor(stackColors[s.c3.ordinal()]);
-        g.fillOval(toPixelX(s.loc.x)+3, toPixelY(s.loc.y)-3, 7, 7);
-        g.setColor(stackColors[s.c2.ordinal()]);
-        g.fillOval(toPixelX(s.loc.x), toPixelY(s.loc.y)-3, 7, 7);
         g.setColor(stackColors[s.c1.ordinal()]);
-        g.fillOval(toPixelX(s.loc.x)-3, toPixelY(s.loc.y)-3, 7, 7);
+        g.fillRect(toPixelX(s.loc.x)-3, toPixelY(s.loc.y)-3, 7, 7);
+        g.setColor(stackColors[s.c2.ordinal()]);
+        g.fillRect(toPixelX(s.loc.x)-3, toPixelY(s.loc.y)-11, 7, 7);
+        g.setColor(stackColors[s.c3.ordinal()]);
+        g.fillRect(toPixelX(s.loc.x)-3, toPixelY(s.loc.y)-19, 7, 7);
       }
 
       g.setColor(Color.black);
       g.fillOval(toPixelX((double)startPose.x - .25),
                  toPixelY((double)startPose.y + .25), size / 2, size / 2);
 
-      // int DX = Math.cos(startPose.theta) * size / 2.0;
-      // int DY = Math.sin(startPose.theta) * size / 2.0;
-      // g.drawLine(toPixelX(startPose.x), toPixelY(startPose.y),
-      // 		(int) (toPixelX(startPose.x) + DX),
-      // 		(int) (toPixelY(startPose.y) - DY));
+      g.setColor(Color.black);
+      g.drawString("W - wall", 20, 20);
+      g.drawString("L - platform", 20, 35);
+      g.drawString("H - homebase", 20, 50);
+      g.drawString("P - print", 20, 65);
+      
+      g.drawString("S - stack", 120, 20);
+      g.drawString("1 - toggle bot", 120, 35);
+      g.drawString("2 - toggle mid", 120, 50);
+      g.drawString("3 - toggle top", 120, 65);
+      
+      g.drawString("I - initial position", 220, 20);
+      g.drawString("D - remove last wall or platform", 220, 35);
+      g.drawString("X - remove last stack", 220, 50);
+      g.drawString("C - remove all homebases", 220, 65);
     }
 
     public int toPixelX(double x) {
@@ -429,7 +466,7 @@ public class BotClientMap {
     public Point toPoint(java.awt.Point mousePoint) {
       double x = (mousePoint.x - xOff) / (double) size;
       double y = -(mousePoint.y - yOff) / (double) size;
-			
+      
       return new Point((int)Math.round(x), (int)Math.round(y));
     }
   }
